@@ -75,13 +75,13 @@
         filter: drop-shadow(0 24px 34px rgba(2, 4, 14, 0.7));
       }
 
-      .card-shell:active {
-        cursor: grabbing;
+      .card-shell:hover,
+      .card-shell.is-dragging {
+        filter: drop-shadow(0 28px 42px rgba(2, 4, 14, 0.82));
       }
 
-      .card-shell:hover .card,
-      .card-shell.is-dragging .card {
-        filter: drop-shadow(0 28px 42px rgba(2, 4, 14, 0.82));
+      .card-shell:active {
+        cursor: grabbing;
       }
 
       .card {
@@ -93,7 +93,7 @@
         height: 100%;
         transform-style: preserve-3d;
         border-radius: 26px;
-        transition: transform 0.8s cubic-bezier(0.2, 0.75, 0.18, 1), filter 0.25s ease;
+        transition: transform 0.8s cubic-bezier(0.2, 0.75, 0.18, 1);
         will-change: transform;
         transform: rotateX(var(--tilt-x)) rotateY(calc(var(--tilt-y) + var(--flip-rotation))) translateY(0px) scale(1.01);
       }
