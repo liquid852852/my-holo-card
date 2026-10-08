@@ -927,16 +927,16 @@
             <div class="field">
               <label>Holo Style</label>
               <div class="theme-picker">
-                <button class="swatch active" data-style="rainbow" style="--c1:#5de2ff; --c2:#ff52be;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                <button class="swatch active" data-style="rainbow" style="--c1:#5de2ff; --c2:#ff52be;">
                   <span>Rainbow</span>
                 </button>
-                <button class="swatch" data-style="cosmos" style="--c1:#7a5cff; --c2:#ffd166;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                <button class="swatch" data-style="cosmos" style="--c1:#7a5cff; --c2:#ffd166;">
                   <span>Cosmos</span>
                 </button>
-                <button class="swatch" data-style="gold" style="--c1:#d4af37; --c2:#f9e7a1;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                <button class="swatch" data-style="gold" style="--c1:#d4af37; --c2:#f9e7a1;">
                   <span>Gold</span>
                 </button>
-                <button class="swatch" data-style="silver" style="--c1:#cae7ff; --c2:#7d8ea8;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                <button class="swatch" data-style="silver" style="--c1:#cae7ff; --c2:#7d8ea8;">
                   <span>Silver</span>
                 </button>
               </div>
@@ -946,7 +946,7 @@
               <label>Portrait</label>
               <div class="row">
                 <button class="button primary" id="uploadBtn" type="button">Upload Image</button>
-                <button class="button" id="flipBtn" type="button" aria-pressed="false" onclick="const card = document.getElementById('card'); const isFlipped = !card.classList.contains('is-flipped'); card.classList.toggle('is-flipped', isFlipped); this.classList.toggle('active', isFlipped); this.setAttribute('aria-pressed', String(isFlipped));">Flip Card</button>
+                <button class="button" id="flipBtn" type="button" aria-pressed="false">Flip Card</button>
                 <input class="hidden-input" id="portraitInput" type="file" accept="image/*" />
               </div>
             </div>
@@ -1049,6 +1049,14 @@
         });
       });
 
+      const flipBtn = document.getElementById('flipBtn');
+      flipBtn.addEventListener('click', () => {
+        const isFlipped = !card.classList.contains('is-flipped');
+        card.classList.toggle('is-flipped', isFlipped);
+        flipBtn.classList.toggle('active', isFlipped);
+        flipBtn.setAttribute('aria-pressed', String(isFlipped));
+      });
+
       const resetTilt = () => {
         card.style.setProperty('--tilt-x', '0deg');
         card.style.setProperty('--tilt-y', '0deg');
@@ -1123,17 +1131,6 @@
       });
 
       setDefaultPortrait();
-
-      const flipBtn = document.getElementById('flipBtn');
-      const applyFlipState = (isFlipped) => {
-        card.classList.toggle('is-flipped', isFlipped);
-        flipBtn.classList.toggle('active', isFlipped);
-        flipBtn.setAttribute('aria-pressed', String(isFlipped));
-      };
-
-      flipBtn.addEventListener('click', () => {
-        applyFlipState(!card.classList.contains('is-flipped'));
-      });
 
       document.getElementById('exportBtn').addEventListener('click', async () => {
         const target = document.getElementById('cardShell');
