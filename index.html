@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aelkr — Time Collapsar</title>
+    <style>
+      :root {
+        --bg-1: #080814;
+        --bg-2: #101423;
+        --panel: rgba(16, 18, 32, 0.72);
+        --panel-border: rgba(255, 255, 255, 0.12);
+        --ink: #edf3ff;
+        --muted: #b8c5e0;
+        --gold: #f7d98c;
+        --danger: #ff556d;
+        --red: #e63946;
+        --purple: #7209b7;
+        --pink: #ff5fd2;
+        --gold-2: #f4bd4f;
+        --shadow: rgba(0, 0, 0, 0.4);
+        --card-w: min(88vw, 380px);
+        --foil-a: #5de2ff;
+        --foil-b: #7a5cff;
+        --foil-c: #ff52be;
+        --foil-d: #ffd166;
+        --art-tint: rgba(167, 130, 255, 0.22);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top, rgba(104, 76, 255, 0.25), transparent 35%),
+          radial-gradient(circle at bottom right, rgba(255, 96, 144, 0.18), transparent 28%),
+          linear-gradient(160deg, var(--bg-1), var(--bg-2) 48%, #060912);
+      }
+
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .app {
+        width: min(1200px, 100%);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 28px;
+        align-items: center;
+      }
+
+      .stage {
+        display: grid;
+        place-items: center;
+        min-height: 620px;
+      }
+
+      .card-shell {
+        position: relative;
+        width: var(--card-w);
+        aspect-ratio: 63 / 88;
+        perspective: 1200px;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+        filter: drop-shadow(0 24px 34px rgba(2, 4, 14, 0.7));
+      }
+
+      .card-shell:active {
+        cursor: grabbing;
+      }
+
+      .card-shell:hover .card,
+      .card-shell.is-dragging .card {
+        filter: drop-shadow(0 28px 42px rgba(2, 4, 14, 0.82));
+      }
+
+      .card {
+        --tilt-x: 0deg;
+        --tilt-y: 0deg;
+        --flip-rotation: 0deg;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        border-radius: 26px;
+        transition: transform 0.8s cubic-bezier(0.2, 0.75, 0.18, 1), filter 0.25s ease;
+        will-change: transform;
+        transform: rotateX(var(--tilt-x)) rotateY(calc(var(--tilt-y) + var(--flip-rotation))) translateY(0px) scale(1.01);
+      }
+
+      .card.is-flipped {
+        --flip-rotation: 180deg;
+      }
+
+      .card-face {
+        position: absolute;
+        inset: 0;
+        border-radius: 26px;
+        overflow: hidden;
+        backface-visibility: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(155deg, rgba(16, 19, 31, 0.98), rgba(8,10,18,0.92));
+      }
+
+      .card-face.front {
+        z-index: 2;
+        transform: rotateY(0deg);
+      }
+
+      .card-face.back {
+        z-index: 1;
+        transform: rotateY(180deg);
+        background: radial-gradient(circle at 30% 18%, rgba(141, 101, 255, 0.38), transparent 24%),
+                    linear-gradient(135deg, rgba(17,18,32,0.96), rgba(9,10,18,1));
+      }
+
+      .art {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 35% 34%, rgba(255, 255, 255, 0.18), transparent 22%),
+          linear-gradient(135deg, rgba(12, 8, 22, 0.38), rgba(12, 10, 18, 0.1)),
+          linear-gradient(135deg, #120b17 0%, #171727 25%, #1b1d35 48%, #0d111b 100%);
+      }
+
+      .art::before {
+        content: "";
+        position: absolute;
+        inset: -10% -8% 16% -10%;
+        background:
+          radial-gradient(circle at 58% 30%, rgba(255, 111, 201, 0.35), transparent 18%),
+          radial-gradient(circle at 68% 25%, rgba(93, 226, 255, 0.2), transparent 16%),
+          radial-gradient(circle at 46% 52%, rgba(166, 98, 255, 0.25), transparent 22%);
+        filter: blur(20px);
+      }
+
+      .portrait-wrap {
+        position: absolute;
+        right: 26px;
+        bottom: 80px;
+        width: 58%;
+        height: 62%;
+        border-radius: 26px 26px 30px 22px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background:
+          radial-gradient(circle at 50% 20%, rgba(120, 201, 255, 0.35), transparent 25%),
+          linear-gradient(180deg, rgba(92,96,132,0.35), rgba(10,12,18,0.2));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 28px 40px rgba(0,0,0,0.25);
+      }
+
+      .portrait-wrap::before,
+      .portrait-wrap::after {
+        content: "";
+        position: absolute;
+        inset: auto;
+        pointer-events: none;
+      }
+
+      .portrait-wrap.is-default-art::before {
+        width: 120%;
+        height: 120%;
+        left: -10%;
+        top: -8%;
+        background: radial-gradient(circle at 42% 28%, rgba(255, 255, 255, 0.18), transparent 12%),
+                    radial-gradient(circle at 45% 38%, rgba(157, 134, 255, 0.22), transparent 18%),
+                    linear-gradient(160deg, rgba(82, 96, 138, 0.18), rgba(10, 12, 22, 0.1));
+        border-radius: 50% 40% 45% 35% / 46% 54% 46% 54%;
+        transform: rotate(-8deg);
+      }
+
+      .portrait-wrap.is-default-art::after {
+        width: 42%;
+        height: 52%;
+        right: 18%;
+        bottom: 8%;
+        background: linear-gradient(180deg, rgba(11, 13, 23, 0.72), rgba(35, 18, 35, 0.9));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(127, 92, 255, 0.16);
+        clip-path: polygon(28% 0%, 72% 0%, 88% 16%, 100% 72%, 82% 100%, 18% 100%, 0% 72%, 12% 16%);
+        opacity: 0.9;
+      }
+
+      .portrait-wrap img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(1.2) contrast(1.12) brightness(0.86) sepia(0.06) hue-rotate(-10deg);
+      }
+
+      .portrait-wrap.is-default-art img {
+        display: block;
+      }
+
+      .portrait-placeholder {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.7);
+        background: linear-gradient(180deg, rgba(16, 22, 32, 0.12), rgba(7, 12, 22, 0.48));
+      }
+
+      .portrait-placeholder.hidden {
+        display: none;
+      }
+
+      .header-band {
+        position: absolute;
+        inset: 0 0 auto 0;
+        padding: 18px 18px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 3;
+      }
+
+      .rank {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px 6px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        background: rgba(9,12,20,0.38);
+        border: 1px solid rgba(255,255,255,0.14);
+        backdrop-filter: blur(14px);
+      }
+
+      .hp-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 10px 6px;
+        border-radius: 999px;
+        background: rgba(13,17,27,0.6);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: inset 0 0 26px rgba(255, 96, 144, 0.18);
+      }
+
+      .hp-label {
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.7);
+      }
+
+      .hp-value {
+        font-size: 15px;
+        font-weight: 900;
+        color: var(--gold);
+      }
+
+      .name-wrap {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        top: 52px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        z-index: 3;
+      }
+
+      .name-block {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .attribute {
+        font-size: 10px;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.72);
+        text-shadow: 0 0 16px rgba(255,255,255,0.2);
+      }
+
+      .name {
+        margin: 0;
+        font-size: clamp(1.5rem, 2vw, 2.2rem);
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        line-height: 1;
+        text-shadow: 0 0 16px rgba(255,255,255,0.16);
+        outline: none;
+      }
+
+      .subname {
+        font-size: 10px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.64);
+      }
+
+      .glyph {
+        font-family: Georgia, serif;
+        font-size: 2.1rem;
+        opacity: 0.85;
+        color: rgba(255,255,255,0.8);
+        text-shadow: 0 0 18px rgba(255,255,255,0.18);
+      }
+
+      .info-panel {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+        z-index: 3;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(8, 10, 19, 0.42);
+        backdrop-filter: blur(16px);
+        box-shadow: inset 0 0 20px rgba(255,255,255,0.02);
+        padding: 14px 14px 16px;
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.62);
+        margin-bottom: 10px;
+      }
+
+      .type-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 72px;
+        min-height: 26px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.04);
+      }
+
+      .theme-red {
+        background: linear-gradient(135deg, rgba(230,57,70,0.22), rgba(255, 137, 109, 0.08));
+        color: #ffbec7;
+      }
+
+      .theme-purple {
+        background: linear-gradient(135deg, rgba(114,9,183,0.22), rgba(160,112,255,0.1));
+        color: #dcc6ff;
+      }
+
+      .ability-grid {
+        display: grid;
+        gap: 7px;
+      }
+
+      .ability {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .ability .cost {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        color: var(--gold);
+      }
+
+      .ability .label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .ability .power {
+        font-size: 12px;
+        font-weight: 900;
+        color: #fff4cc;
+      }
+
+      .ability .text {
+        font-size: 10px;
+        color: rgba(255,255,255,0.75);
+        line-height: 1.5;
+        grid-column: 2 / span 2;
+      }
+
+      .ability[contenteditable="true"],
+      .name[contenteditable="true"],
+      .editable {
+        outline: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+        padding: 4px 6px;
+      }
+
+      .foil,
+      .glare,
+      .grain,
+      .holo {
+        position: absolute;
+        inset: -10%;
+        pointer-events: none;
+      }
+
+      .foil {
+        background:
+          linear-gradient(125deg,
+            rgba(255,255,255,0.08) 0%,
+            rgba(255,255,255,0.18) 10%,
+            rgba(255,255,255,0.02) 18%,
+            rgba(255,255,255,0.24) 24%,
+            var(--foil-a) 33%,
+            rgba(255,255,255,0.14) 42%,
+            transparent 48%,
+            rgba(255,255,255,0.08) 58%,
+            var(--foil-b) 66%,
+            rgba(255,255,255,0.12) 72%,
+            transparent 84%);
+        mix-blend-mode: screen;
+        opacity: 0.95;
+        filter: brightness(1.25) saturate(1.3);
+        transform: translate3d(calc(var(--mx, 0) * 0.12px), calc(var(--my, 0) * 0.12px), 36px);
+      }
+
+      .holo {
+        background:
+          linear-gradient(120deg,
+            transparent 10%,
+            rgba(255,255,255,0.34) 17%,
+            var(--foil-a) 24%,
+            var(--foil-c) 35%,
+            var(--foil-b) 44%,
+            transparent 53%,
+            rgba(255,255,255,0.18) 62%,
+            var(--foil-d) 68%,
+            var(--foil-b) 76%,
+            transparent 82%);
+        mix-blend-mode: color-dodge;
+        filter: blur(12px) saturate(1.9) brightness(1.15);
+        opacity: 1;
+        transform: translate3d(calc(var(--mx, 0) * 0.16px), calc(var(--my, 0) * 0.16px), 46px);
+      }
+
+      .glare {
+        background: radial-gradient(circle at calc(var(--mx, 50) * 1%) calc(var(--my, 50) * 1%), rgba(255,255,255,0.44), transparent 28%);
+        mix-blend-mode: screen;
+        opacity: 1;
+        filter: blur(2px) brightness(1.15);
+        transform: translateZ(30px);
+      }
+
+      .grain {
+        opacity: 0.18;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 10px 10px;
+        mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+        transform: translateZ(18px);
+      }
+
+      .card-back-face {
+        position: absolute;
+        inset: 0;
+        border-radius: 26px;
+        background: radial-gradient(circle at 50% 18%, rgba(255,255,255,0.12), transparent 26%), linear-gradient(145deg, rgba(9, 13, 23, 0.96), rgba(20, 14, 31, 0.96));
+      }
+
+      .card-back-face::before,
+      .card-back-face::after {
+        content: "";
+        position: absolute;
+        inset: 20px;
+        border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+
+      .card-back-face::after {
+        inset: 46px;
+        background: linear-gradient(135deg, rgba(114,9,183,0.18), rgba(230,57,70,0.12));
+        border-color: rgba(236, 206, 255, 0.12);
+      }
+
+      .back-core {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        z-index: 2;
+      }
+
+      .back-core .emblem {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.18);
+        display: grid;
+        place-items: center;
+        font-size: 2.6rem;
+        font-weight: 900;
+        color: rgba(255,255,255,0.66);
+        background: radial-gradient(circle, rgba(255,255,255,0.14), rgba(255,255,255,0.02));
+        box-shadow: inset 0 0 40px rgba(255,255,255,0.04), 0 0 24px rgba(141, 101, 255, 0.2);
+      }
+
+      .back-logo {
+        margin-top: 12px;
+        font-size: 0.78rem;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.66);
+      }
+
+      .panel {
+        position: relative;
+        background: rgba(14, 18, 30, 0.78);
+        border: 1px solid var(--panel-border);
+        border-radius: 26px;
+        backdrop-filter: blur(18px);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 18px 30px rgba(0,0,0,0.18);
+        padding: 24px;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .panel-header h2 {
+        margin: 0;
+        font-size: clamp(1.2rem, 2vw, 1.8rem);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.76);
+      }
+
+      .control-group {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.68);
+      }
+
+      .writebox {
+        width: 100%;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.04);
+        color: var(--ink);
+        padding: 12px 14px;
+        font-size: 0.95rem;
+        resize: vertical;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .button {
+        border: 1px solid rgba(255,255,255,0.1);
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+        color: var(--ink);
+        padding: 10px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255,255,255,0.22);
+        box-shadow: 0 10px 18px rgba(0,0,0,0.18);
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, rgba(114,9,183,0.28), rgba(230,57,70,0.28));
+      }
+
+      .button.active {
+        border-color: rgba(255,255,255,0.28);
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.18), 0 10px 18px rgba(0,0,0,0.15);
+      }
+
+      .theme-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .swatch {
+        flex: 1 1 82px;
+        min-height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: linear-gradient(135deg, var(--c1), var(--c2));
+        color: #fff;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .swatch.active {
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.3), 0 0 18px rgba(255,255,255,0.14);
+      }
+
+      .swatch span {
+        position: absolute;
+        inset: auto 10px 8px 10px;
+        text-align: left;
+      }
+
+      .hidden-input {
+        display: none;
+      }
+
+      @media (max-width: 1023px) {
+        .layout {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .stage {
+          min-height: 520px;
+        }
+      }
+
+      @media (max-width: 767px) {
+        body {
+          padding: 16px;
+        }
+
+        .layout {
+          gap: 14px;
+        }
+
+        .panel {
+          padding: 18px 16px;
+        }
+
+        .stage {
+          min-height: 420px;
+        }
+
+        .card-shell {
+          width: min(86vw, 360px);
+        }
+
+        .name-wrap {
+          top: 46px;
+        }
+
+        .portrait-wrap {
+          right: 16px;
+          bottom: 92px;
+          width: 60%;
+          height: 58%;
+        }
+
+        .header-band {
+          padding: 12px 12px 0;
+        }
+
+        .rank,
+        .hp-chip {
+          padding: 5px 7px;
+          gap: 5px;
+        }
+
+        .rank,
+        .hp-label {
+          font-size: 7px;
+          letter-spacing: 0.1em;
+        }
+
+        .hp-value {
+          font-size: 11px;
+        }
+
+        .name-wrap {
+          left: 14px;
+          right: 14px;
+          top: 40px;
+        }
+
+        .name {
+          font-size: clamp(0.9rem, 4.5vw, 1.1rem);
+          letter-spacing: 0.02em;
+          line-height: 1.05;
+          overflow-wrap: anywhere;
+        }
+
+        .name-block {
+          width: 43%;
+          min-width: 0;
+        }
+
+        .attribute,
+        .subname {
+          font-size: 8px;
+          letter-spacing: 0.12em;
+        }
+
+        .glyph {
+          font-size: 1.4rem;
+        }
+
+        .portrait-wrap {
+          right: 14px;
+          bottom: 62%;
+          width: 50%;
+          height: 30%;
+        }
+
+        .info-panel {
+          left: 10px;
+          right: 10px;
+          bottom: 10px;
+          padding: 8px 8px 9px;
+          border-radius: 14px;
+        }
+
+        .meta-row {
+          margin-bottom: 6px;
+          font-size: 7px;
+          letter-spacing: 0.06em;
+        }
+
+        .type-bar {
+          gap: 5px;
+          margin-bottom: 6px;
+        }
+
+        .pill {
+          min-width: 0;
+          min-height: 20px;
+          padding: 4px 7px;
+          font-size: 7px;
+          letter-spacing: 0.06em;
+        }
+
+        .ability-grid {
+          gap: 5px;
+        }
+
+        .ability,
+        .ability[contenteditable="true"] {
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 4px 6px;
+          padding: 6px 7px;
+          border-radius: 8px;
+        }
+
+        .ability .cost {
+          grid-column: 1 / -1;
+          font-size: 7px;
+          letter-spacing: 0.08em;
+        }
+
+        .ability .label {
+          min-width: 0;
+          font-size: 8px;
+          letter-spacing: 0.04em;
+          overflow-wrap: anywhere;
+        }
+
+        .ability .power {
+          font-size: 9px;
+        }
+
+        .ability .text {
+          grid-column: 1 / -1;
+          font-size: 8px;
+          line-height: 1.3;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="layout">
+        <div class="stage">
+          <div class="card-shell" id="cardShell">
+            <div class="card" id="card">
+              <div class="card-face front">
+                <div class="art"></div>
+                <div class="foil"></div>
+                <div class="holo"></div>
+                <div class="glare"></div>
+                <div class="grain"></div>
+
+                <div class="header-band">
+                  <div class="rank">STAGE 2 MASTER</div>
+                  <div class="hp-chip">
+                    <span class="hp-label">HP</span>
+                    <span class="hp-value" contenteditable="true">320</span>
+                  </div>
+                </div>
+
+                <div class="name-wrap">
+                  <div class="name-block">
+                    <div class="attribute">創發紅 / 疾速紫</div>
+                    <h1 class="name" contenteditable="true">時空坍縮者 • 艾爾克</h1>
+                    <div class="subname">CHRONO ORIGIN</div>
+                  </div>
+                  <div class="glyph">✦</div>
+                </div>
+
+                <div class="portrait-wrap">
+                  <img id="portraitImage" alt="portrait" />
+                  <div class="portrait-placeholder" id="portraitPlaceholder">Portrait</div>
+                </div>
+
+                <div class="info-panel">
+                  <div class="meta-row">
+                    <span>Time Collapsar</span>
+                    <span>No. 001/001 • SAR</span>
+                  </div>
+                  <div class="type-bar">
+                    <span class="pill theme-red">創發紅</span>
+                    <span class="pill theme-purple">疾速紫</span>
+                  </div>
+                  <div class="ability-grid">
+                    <div class="ability" contenteditable="true">
+                      <div class="cost">紅×1 / 無×1</div>
+                      <div class="label">Phase Rift Slash</div>
+                      <div class="power">130</div>
+                      <div class="text">攻擊後，選擇對手後備區的一隻角色，無視防護屏障造成 30 點貫穿傷害。</div>
+                    </div>
+                    <div class="ability" contenteditable="true">
+                      <div class="cost">紅×2 / 紫×2</div>
+                      <div class="label">Singularity</div>
+                      <div class="power">280</div>
+                      <div class="text">造成巨額傷害的同時，強制將對手戰鬥區的角色退回手牌，並讓對手將該角色附帶的 2 張能量卡直接送入棄牌區。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-face back">
+                <div class="card-back-face"></div>
+                <div class="back-core">
+                  <div>
+                    <div class="emblem">A</div>
+                    <div class="back-logo">Chrono Labs</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <div class="panel-header">
+            <h2>Card Forge</h2>
+            <span class="badge">SAR</span>
+          </div>
+
+          <div class="control-group">
+            <div class="field">
+              <label>Holo Style</label>
+              <div class="theme-picker">
+                <button class="swatch active" data-style="rainbow" style="--c1:#5de2ff; --c2:#ff52be;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                  <span>Rainbow</span>
+                </button>
+                <button class="swatch" data-style="cosmos" style="--c1:#7a5cff; --c2:#ffd166;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                  <span>Cosmos</span>
+                </button>
+                <button class="swatch" data-style="gold" style="--c1:#d4af37; --c2:#f9e7a1;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                  <span>Gold</span>
+                </button>
+                <button class="swatch" data-style="silver" style="--c1:#cae7ff; --c2:#7d8ea8;" onclick="document.querySelectorAll('.swatch').forEach((el) => el.classList.toggle('active', el === this)); setHoloStyle(this.dataset.style);">
+                  <span>Silver</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Portrait</label>
+              <div class="row">
+                <button class="button primary" id="uploadBtn" type="button">Upload Image</button>
+                <button class="button" id="flipBtn" type="button" aria-pressed="false" onclick="const card = document.getElementById('card'); const isFlipped = !card.classList.contains('is-flipped'); card.classList.toggle('is-flipped', isFlipped); this.classList.toggle('active', isFlipped); this.setAttribute('aria-pressed', String(isFlipped));">Flip Card</button>
+                <input class="hidden-input" id="portraitInput" type="file" accept="image/*" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Card Text</label>
+              <textarea class="writebox" rows="4" id="cardText">【時空重組】當此卡在場上時，每回合一次，你可以選擇手牌中的一張能量卡重新分配給場上任意角色；若此卡收到致命傷害，可透過消耗自身 1 點能量標記抵銷該次傷害，並保留 10 HP（每局限發動一次）。</textarea>
+            </div>
+
+            <div class="field">
+              <label>Export</label>
+              <div class="row">
+                <button class="button primary" id="exportBtn" type="button">Export PNG</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script>
+      const card = document.getElementById('card');
+      const cardShell = document.getElementById('cardShell');
+      const root = document.documentElement;
+      const portraitInput = document.getElementById('portraitInput');
+      const portraitImage = document.getElementById('portraitImage');
+      const portraitPlaceholder = document.getElementById('portraitPlaceholder');
+      const cardText = document.getElementById('cardText');
+
+      const defaultPortraitSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 760">
+          <defs>
+            <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#22263d"/>
+              <stop offset="55%" stop-color="#0d1324"/>
+              <stop offset="100%" stop-color="#090d18"/>
+            </linearGradient>
+            <linearGradient id="coat" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#4d4d77"/>
+              <stop offset="100%" stop-color="#0f1324"/>
+            </linearGradient>
+            <radialGradient id="glow" cx="50%" cy="35%" r="45%">
+              <stop offset="0%" stop-color="#d6edff" stop-opacity="0.8"/>
+              <stop offset="30%" stop-color="#8f6cff" stop-opacity="0.65"/>
+              <stop offset="100%" stop-color="#1d1833" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="640" height="760" fill="url(#bg)"/>
+          <circle cx="345" cy="200" r="220" fill="url(#glow)"/>
+          <path d="M170 710 L210 358 Q248 292 310 300 L340 320 L370 300 Q432 292 470 358 L510 710 Z" fill="url(#coat)" opacity="0.96"/>
+          <path d="M260 270 L220 300 L250 360 L300 350 L320 314 Z" fill="#1a1830"/>
+          <path d="M380 270 L420 300 L390 360 L340 350 L320 314 Z" fill="#1a1830"/>
+          <path d="M270 170 C280 98, 360 90, 375 168 L394 265 L246 265 Z" fill="#ded8ff" opacity="0.98"/>
+          <path d="M300 150 L324 180 L342 170 L353 196 L372 210 L356 240 L288 240 L278 206 L296 182 Z" fill="#d8d1ff"/>
+          <path d="M305 244 L335 244 L345 270 L295 270 Z" fill="#101521"/>
+          <circle cx="325" cy="280" r="70" fill="#d9d3ff" opacity="0.2"/>
+          <path d="M310 352 Q325 332 340 352 L347 430 Q332 452 325 452 Q318 452 303 430 Z" fill="#e5dcff"/>
+          <path d="M276 460 Q310 422 325 425 Q340 422 374 460 L392 710 L258 710 Z" fill="#b8c6ff" opacity="0.15"/>
+          <path d="M280 340 L250 470 L215 660 L120 710 L160 520 L212 390 Z" fill="#1b2031" opacity="0.9"/>
+          <path d="M370 340 L400 470 L435 660 L530 710 L490 520 L438 390 Z" fill="#1b2031" opacity="0.9"/>
+          <path d="M246 496 L200 610 L272 610 L290 526 Z" fill="#7d49ff" opacity="0.85"/>
+          <path d="M404 496 L450 610 L378 610 L360 526 Z" fill="#ff4d8d" opacity="0.72"/>
+          <path d="M214 420 Q325 340 436 420" stroke="#ff9f43" stroke-width="5" fill="none" opacity="0.7"/>
+          <path d="M210 382 L318 340 L430 382" stroke="#b8d7ff" stroke-width="4" fill="none" opacity="0.6"/>
+          <circle cx="275" cy="290" r="10" fill="#120f1d"/>
+          <circle cx="375" cy="290" r="10" fill="#120f1d"/>
+          <path d="M295 322 Q325 338 355 322" stroke="#1f1430" stroke-width="6" fill="none" stroke-linecap="round"/>
+        </svg>
+      `;
+
+      const setDefaultPortrait = () => {
+        const encoded = encodeURIComponent(defaultPortraitSvg.trim());
+        portraitImage.src = `data:image/svg+xml;charset=utf-8,${encoded}`;
+        portraitImage.style.display = 'block';
+        portraitPlaceholder.classList.add('hidden');
+        document.querySelector('.portrait-wrap').classList.add('is-default-art');
+      };
+
+      const setHoloStyle = (style) => {
+        const styles = {
+          rainbow: ['#5de2ff', '#7a5cff', '#ff52be', '#ffd166'],
+          cosmos: ['#7a5cff', '#ffd166', '#5de2ff', '#ff6b6b'],
+          gold: ['#d4af37', '#f9e7a1', '#9b6a0a', '#f6d365'],
+          silver: ['#dfeaf7', '#9ea9bd', '#7d8ea8', '#f1f7ff']
+        };
+
+        const [a, b, c, d] = styles[style] || styles.rainbow;
+        root.style.setProperty('--foil-a', a);
+        root.style.setProperty('--foil-b', b);
+        root.style.setProperty('--foil-c', c);
+        root.style.setProperty('--foil-d', d);
+      };
+
+      document.querySelectorAll('.swatch').forEach((swatch) => {
+        swatch.addEventListener('click', () => {
+          document.querySelectorAll('.swatch').forEach((el) => el.classList.remove('active'));
+          swatch.classList.add('active');
+          setHoloStyle(swatch.dataset.style);
+        });
+      });
+
+      const resetTilt = () => {
+        card.style.setProperty('--tilt-x', '0deg');
+        card.style.setProperty('--tilt-y', '0deg');
+        root.style.setProperty('--mx', 50);
+        root.style.setProperty('--my', 50);
+        cardShell.classList.remove('is-dragging');
+      };
+
+      const updateParallax = (x, y) => {
+        const rect = cardShell.getBoundingClientRect();
+        const px = Math.min(1, Math.max(0, (x - rect.left) / rect.width));
+        const py = Math.min(1, Math.max(0, (y - rect.top) / rect.height));
+        const rotateY = (px - 0.5) * 34;
+        const rotateX = (0.5 - py) * 34;
+        const mx = px * 100;
+        const my = py * 100;
+        root.style.setProperty('--mx', mx);
+        root.style.setProperty('--my', my);
+        card.style.setProperty('--tilt-x', `${rotateX}deg`);
+        card.style.setProperty('--tilt-y', `${rotateY}deg`);
+      };
+
+      const handlePointerMove = (event) => {
+        const rect = cardShell.getBoundingClientRect();
+        const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+        if (inside || cardShell.classList.contains('is-dragging')) {
+          updateParallax(event.clientX, event.clientY);
+          cardShell.classList.add('is-dragging');
+        } else if (!cardShell.classList.contains('is-dragging')) {
+          resetTilt();
+        }
+      };
+
+      cardShell.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointermove', handlePointerMove);
+
+      cardShell.addEventListener('pointerleave', () => {
+        if (!cardShell.classList.contains('is-dragging')) {
+          resetTilt();
+        }
+      });
+
+      cardShell.addEventListener('pointerdown', (event) => {
+        cardShell.classList.add('is-dragging');
+        if (cardShell.setPointerCapture) {
+          cardShell.setPointerCapture(event.pointerId);
+        }
+        updateParallax(event.clientX, event.clientY);
+      });
+
+      window.addEventListener('pointerup', () => {
+        resetTilt();
+      });
+
+      window.addEventListener('pointercancel', () => {
+        resetTilt();
+      });
+
+      document.getElementById('uploadBtn').addEventListener('click', () => portraitInput.click());
+
+      portraitInput.addEventListener('change', (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          portraitImage.src = e.target.result;
+          portraitImage.style.display = 'block';
+          portraitPlaceholder.classList.add('hidden');
+          document.querySelector('.portrait-wrap').classList.remove('is-default-art');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      setDefaultPortrait();
+
+      const flipBtn = document.getElementById('flipBtn');
+      const applyFlipState = (isFlipped) => {
+        card.classList.toggle('is-flipped', isFlipped);
+        flipBtn.classList.toggle('active', isFlipped);
+        flipBtn.setAttribute('aria-pressed', String(isFlipped));
+      };
+
+      flipBtn.addEventListener('click', () => {
+        applyFlipState(!card.classList.contains('is-flipped'));
+      });
+
+      document.getElementById('exportBtn').addEventListener('click', async () => {
+        const target = document.getElementById('cardShell');
+        try {
+          const canvas = await html2canvas(target, {
+            scale: 2,
+            backgroundColor: null,
+            useCORS: true,
+            width: target.offsetWidth,
+            height: target.offsetHeight
+          });
+          const link = document.createElement('a');
+          link.download = 'aelkr-card.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } catch (error) {
+          console.error('Export failed:', error);
+          alert('匯出失敗，請稍後再試。');
+        }
+      });
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', (event) => {
+          if (typeof event.gamma === 'number' && typeof event.beta === 'number') {
+            const rotateX = Math.max(-18, Math.min(18, event.beta / 8));
+            const rotateY = Math.max(-18, Math.min(18, event.gamma / 7));
+            card.style.setProperty('--tilt-x', `${rotateX}deg`);
+            card.style.setProperty('--tilt-y', `${rotateY}deg`);
+          }
+        });
+      }
+
+      cardText.addEventListener('input', () => {
+        const target = document.querySelector('.ability .text');
+        if (target) target.textContent = cardText.value;
+      });
+
+      setHoloStyle('rainbow');
+      root.style.setProperty('--mx', 50);
+      root.style.setProperty('--my', 50);
+    </script>
+  </body>
+</html>
